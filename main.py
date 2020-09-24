@@ -8,7 +8,7 @@ import schedule
 import time
 import config2 as cfg 
 import string
-import csv
+import pandas as pd
 import yagmail
 
 ### 
@@ -23,25 +23,39 @@ print(db.list_collection_names())
 collection_name=cfg.collection_name ### FROM CONFIG FILE
 ## Doing our tasks
 ### *********** to count all records
+
 def docs_count():
-    funcn1=db[collection_name].count_documents({})
-    return "Total Documents in {} On {} is: {} ".format(collection_name,datetime.datetime.today(),funcn1)
-docs_in_collection=str(docs_count())
-#print(docs_in_collection)
+    total_documents=db[collection_name].count_documents({})
+    return total_documents
+total_documents_in_collection=str(docs_count())
+#print(total_docs_in_collection)
 get_interval_mode = cfg.interval_mode  ### FROM CONFIG FILE
 #get_interval_duration = cfg.interval_duration ### FROM CONFIG FILE
-where=cfg.filters
-what=cfg.filters_value
+"""filter={
+        for x,y in cfg.filter.items():
+            print(x+":"+y)
+        }"""
 def docs_count_interval_day(start_date_time,end_date_time): #search_date="current_date"
    
-    get_count_date=db[collection_name].count_documents(
-        {
-            'step':'2',where:what
+    query1={
+    'created_date':{'$gte':start_date_time,'$lt':end_date_time},
         }
+    query2=cfg.filter
+    query=query1.copy()
+    query.update(query2)
+    print(query)
+    get_count_date=db[collection_name].count_documents(
+        #{
+        #'created_date':{'$gte':start_date_time,'$lt':end_date_time},
+        #}
+
+        query
     )
     print(get_count_date)
-    return "Total Documents in {} From {} To {} is: {}".format(collection_name,start_date,end_date,get_count_date)
+    return get_count_date
     
+
+
 
 ### -----Checks and Converstions----
 
@@ -53,7 +67,6 @@ if get_interval_mode == 'day':
         print(start_date)
         end_date_str=str(datetime.date.today())+" "+"00:00:00"
         print(end_date_str)
-        print("@@@@@@@@")
         end_date=datetime.datetime.strptime(end_date_str,'%Y-%m-%d %H:%M:%S')
         docs_in_collection_range_day = docs_count_interval_day(start_date,end_date)
         #print(docs_in_collection_range_day)
@@ -79,12 +92,22 @@ if get_interval_mode == 'day':
 
         #print(docs_in_collection_range_dy)
 
-with open("output.txt","w+") as f:
+"""with open("output.txt","w+") as f:
     f.write(docs_in_collection)
     f.write('\n')
     f.write(docs_in_collection_range_day)
-    f.close()
+    f.close()"""
+### Putting all output into excel
 
+report={
+    'From':['{}'.format(datetime.datetime(2020,8,21,0,0,0))],
+    'To'  : ['{}'.format(datetime.datetime(2020,9,11,00,00,00))],
+    'Count': [docs_in_collection_range_day]
+    }
+
+df=pd.DataFrame(report,columns=['From','To','Count'])
+print(df)
+df.to_excel("/home/harsh/oauth_access_log_py_backend_job/output.xlsx",sheet_name="Sheet_1",index=False,engine='xlsxwriter')
 
 
 def docs_count_interval_hour():
@@ -96,7 +119,7 @@ def mail_sender():
     yag.login()
     yag.send(to=["harsh_student@citabu.ac.in"],
          subject="Testing Yagmail",
-         attachments="/home/harsh/oauth_access_log_py_backend_job/output.txt",
+         attachments="/home/harsh/oauth_access_log_py_backend_job/output.xlsx",
          contents="This is data report"
         )
     

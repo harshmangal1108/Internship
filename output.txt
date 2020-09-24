@@ -1,0 +1,2 @@
+Total Documents in statscollection On 2020-09-19 01:17:28.747030 is: 21 
+Total Documents in statscollection From 2020-08-21 00:00:00 To 2020-08-22 00:00:00 is: 0
