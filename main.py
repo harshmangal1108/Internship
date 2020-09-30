@@ -105,9 +105,9 @@ for cfgkey,cfgval in cfg.configuration_count.items():
 ### Putting all output into excel
 print(docs_in_collection_range_day)
 report={
-    'From':['{}'.format(datetime.datetime(2020,8,21,0,0,0))],
-    'To'  : ['{}'.format(datetime.datetime(2020,9,11,00,00,00))],
-    'Count': [docs_in_collection_range_day]
+    'From':['{}'.format(datetime.datetime(2020,8,21,0,0,0)),"Hello"],
+    'To'  : ['{}'.format(datetime.datetime(2020,9,11,00,00,00)),"World"],
+    'Count': [docs_in_collection_range_day,"Python"]
     }
 
 df=pd.DataFrame(report,columns=['From','To','Count'])
