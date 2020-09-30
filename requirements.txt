@@ -1,1 +1,5 @@
 pymongo
+pandas
+xlsxwriter
+yagmail
+keyring
