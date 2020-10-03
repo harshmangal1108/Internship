@@ -21,7 +21,7 @@ print(newfile)
 def send_to_sheet(cols):
     copyfile(file,newfile)
     for j in cols:
-        writer=pd.ExcelWriter(newfile,engine="openpyxl")
+        writer=pd.ExcelWriter(newfile,engine="xlsxwriter")
         for my_name in cols:
             mydf=df.loc[df[colpick]==my_name]
             mydf.to_excel(writer,sheet_name=my_name,index=False)

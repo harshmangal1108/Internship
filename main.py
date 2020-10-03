@@ -2,15 +2,17 @@
 #from email.mime.multipart import MIMEMultipart
 #import smtplib,ssl,getpass
 from pymongo import MongoClient
+from shutil import copyfile
+import pandas as pd
+import config as cfg 
 import datetime
 import csv
 import schedule
-import time
-import config2 as cfg 
 import string
-import pandas as pd
 import yagmail
 import xlsxwriter
+import os
+
 # ---Creating Connection---
 client=MongoClient(cfg.uri)
 print(client.list_database_names()) # Check available databases
@@ -27,30 +29,29 @@ def docs_count():
     #print(type(total_documents_list))
     return total_documents_list
 print(docs_count())
-#get_interval_mode = cfg.interval_mode  ### FROM CONFIG FILE
-#get_interval_duration = cfg.interval_duration ### FROM CONFIG FILE
 
 # ---Count in Query & Range---
 def docs_count_interval_day(start_date_time,end_date_time,collection_name,query): #search_date="current_date"
     get_count_date=db[collection_name].count_documents(query)
-    print(query)
-    print("Count -->",get_count_date)
+    #print(query)
+    #print("Count -->",get_count_date)
     return get_count_date
 
-# --- Writing to Excel ---
-def excel_sheet(From,To,name,query,count):
+# ---Creating Data for Excel ---
+reports_array=[]
+def build_excel_data(From,To,name,query,count,sheet):
     report={
         "From":str(From),
         "To":str(To),
         "Name":name,
         "Query":query,
-        "Count":count
+        "Count":count,
+        "Sheet":sheet
     }
-    df=pd.DataFrame(report,columns=["From",'To','Name','Query','Count'])
-    df.to_excel("./report.xlsx",sheet_name=name,index=False,engine='xlsxwriter')
+    reports_array.append(report)
+
 
 # ---Checks and Converstions---
-
 for cfgkey,cfgval in cfg.configuration_count.items():
     collection_name=cfgval["collection_name"]
     if cfgval["is_active"]== 1:
@@ -69,7 +70,7 @@ for cfgkey,cfgval in cfg.configuration_count.items():
                 query.update(query2)
                 end_date=datetime.datetime.strptime(end_date_str,'%Y-%m-%d %H:%M:%S')
                 docs_in_collection_range_day = docs_count_interval_day(start_date,end_date,collection_name,query)
-                excel_sheet(start_date,end_date,cfgval["name"],query,docs_in_collection_range_day)
+                build_excel_data(start_date,end_date,cfgval["name"],query,docs_in_collection_range_day,cfgval["new_sheet_name"])
 
                 #print(docs_in_collection_range_day)
             else :
@@ -93,25 +94,45 @@ for cfgkey,cfgval in cfg.configuration_count.items():
                 query=query1.copy()
                 query.update(query2)
                 docs_in_collection_range_day = docs_count_interval_day(start_date,end_date,collection_name,query)
-                excel_sheet(start_date,end_date,cfgval["name"],query,docs_in_collection_range_day)
+                build_excel_data(start_date,end_date,cfgval["name"],query,docs_in_collection_range_day,cfgval["new_sheet_name"])
+
+# ---Creating and Spliting Excel---
+df=pd.DataFrame(reports_array,columns=["From",'To','Name','Query','Count',"Sheet"])
+print(df)
+df.to_excel("./Common Report.xlsx",sheet_name=cfg.new_sheet_name,index=False,engine='openpyxl')
+file="./Common Report.xlsx"
+df1=pd.read_excel(file)
+extenxion=os.path.splitext(file)[1]
+path=os.getcwd()
+final_file=os.path.join(path,"Final Report"+""+extenxion)
+#print()
+column_pick="Sheet"
+columns=list(set(df1[column_pick].values))
+# ---Spliting Sheet---
+def split_sheet(columns):
+    copyfile(file,final_file)
+    for _ in columns:
+        writer=pd.ExcelWriter(final_file,engine="openpyxl")
+        for sheet_name in columns:
+            new_df=df.loc[df[column_pick]== sheet_name]
+            new_df.to_excel(writer,sheet_name,index=False)
+        writer.save()
+split_sheet(columns)
 
 
-def docs_count_interval_hour():
-    pass
 
 # --- Sending Mail ---
-
 def mail_sender():
     sender = cfg.sender
     yag=yagmail.SMTP(sender,password=cfg.password)
     yag.login()
     yag.send(to=cfg.reciever,
-         subject="Testing Yagmail",
-         attachments="/home/harsh/oauth_access_log_py_backend_job/output.xlsx",
-         contents="This is data report"
+         subject="Spliting Sheet",
+         attachments=final_file,
+         contents="Spliting Data Sheet Name wise is done.The approach and libraries are that only which we discussed"
         )
     
-#mail_sender()
+mail_sender()
 
 # --- scheduling Task ---
 #schedule.every(15).seconds.do(mail_sender)
