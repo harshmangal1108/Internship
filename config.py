@@ -1,12 +1,21 @@
 uri = "mongodb://localhost:27017"
 dbname = 'newdb'
 is_active=0
+is_groupby=0
 new_sheet_name="Main"
+
+group_by="function_name"
 configuration_count = {
     "stats_for_1":{ 
         "name":"Stats with filter",
         "uri" : uri,
         "dbname" : dbname,
+        "is_groupby":1,
+        "group_by":{
+            "client_id":"$client_id",
+            "status_code":"$status_code"
+        },
+        "field_name":"created_date",
         "is_active":1,
         "new_sheet_name":"My Sheet",
         "collection_name":'statscollection',
@@ -26,7 +35,9 @@ configuration_count = {
         "name":"Stats with filter",
         "uri" : uri,
         "dbname" : dbname,
+        "group_by":group_by,
         "is_active":1,
+        "field_name":"created_date",
         "new_sheet_name":"My Sheet",
         "collection_name":'statscollection',
         "interval_mode":"day", #day,seconds,minutes by default = day
@@ -44,6 +55,8 @@ configuration_count = {
         "name":"Function Name Filter",
         "uri" : uri,
         "dbname" : dbname,
+        "group_by":group_by,
+        "field_name":"created_date",
         "is_active":1,
         "new_sheet_name":"Sheet 1",
         "collection_name":'collection',
@@ -62,6 +75,8 @@ configuration_count = {
         "name":"Stats for Date Range",
         "uri" : uri,
         "dbname" : dbname,
+        "group_by":group_by,
+        "field_name":"created_date",
         "is_active":1,
         "new_sheet_name":new_sheet_name,
         "collection_name":'statscollection',
