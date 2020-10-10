@@ -49,7 +49,7 @@ def aggregate_fucntion(start_date,end_date,group_by):
 
 ### Task:
 """
-created date from config..
+created date from config.. filed name
 validate config field ex.. agar xyz hai to run
 Match:--
 group_by E/N field ,aggregate will call only it will be on...
