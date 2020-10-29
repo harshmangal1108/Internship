@@ -1,10 +1,11 @@
 import yagmail
-yag=yagmail.SMTP("harsh.mangal03acc@gmail.com")
+yag=yagmail.SMTP("sarvidigilocker@gmail.com")
 yag.login()
-yag.send(to=["harsh_student@citabu.ac.in","hamamagarwal007@gmail.com"],
-         subject="Testing Yagmail",
-         attachments="/home/harsh/Desktop/redhat.jpg",
-         contents="Hello here is pic lit!:"
+yag.send(to=["18eucs100@skcet.ac.in"],
+        subject="Testing Yagmail",
+        attachments="",
+        contents="Hello here is pic lit!:"
         )
+yag.close()
 ### can be lists for number of attachments
 
