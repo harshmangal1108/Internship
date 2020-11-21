@@ -2,7 +2,8 @@ from pymongo import MongoClient
 from flask import Flask, Response, render_template, request, jsonify
 from flask_restful import Resource, Api
 from shutil import copyfile
-import pandas as pd, numpy as np
+import pandas as pd
+import numpy as np
 import datetime
 import csv
 import pprint
@@ -17,16 +18,15 @@ from bson import json_util, ObjectId
 
 
 ######################
-##Creating Connection
+# Creating Connection
 ######################
 # client=MongoClient(cfg.uri)
 # print(client)
 # db_name=cfg.dbname
 # db=client[db_name]
 
-
 ######################
-##Global values
+# Global values
 ######################
 total_documents_list = []
 columns = []
@@ -37,14 +37,14 @@ message = "Success"
 validation_message = ""
 
 
-
 ######################
-##Count all docs
+# Count all docs
 ######################
 def docs_count():
     for i in range(len(cfg.configuration_count)):
         total_documents = db[
-            cfg.configuration_count["stats_for_{}".format(i + 1)]["collection_name"]
+            cfg.configuration_count["stats_for_{}".format(
+                i + 1)]["collection_name"]
         ].count_documents({})
         total_documents_list.append(total_documents)
     return total_documents_list
@@ -64,7 +64,7 @@ def docs_count_interval_day(
 
 
 ######################
-##Find Results(Aggregate)
+# Find Results(Aggregate)
 ######################
 def aggregate_fucntion(cfgval, start_date, end_date, query, group_by):
     client = MongoClient(cfgval["uri"])
@@ -106,7 +106,7 @@ def aggregate_indataframe(
 
 
 ######################
-##Creating Data for Excel
+# Creating Data for Excel
 ######################
 reports_array = []
 
@@ -123,25 +123,37 @@ def build_excel_data(From, To, name, query, count, sheet):
         "Sheet`": sheet,
     }
     reports_array.append(aggregate_report_row)
+
 # Check Fields---
-def check_fields(config_keys,config_values):
+
+
+def check_fields(config_keys, config_values):
+    global check_field_length
     global validation_message
     global status
-    #print(config_values.keys())
-    fields=cfg.configuration_count_required_fields
-    check_list=[]
-    for field in fields:
-        if field not in config_values.keys():
-            #check_flag=0
-            check_list.append(field)
-    length_list=len(check_list)
-    print(check_list)
-    if length_list > 0:
-        status = False
-        validation_message += config_keys + " : Fields '{}' is Not Present in Configuration File, ".format(",".join(check_list))
-        return False
-    return True
+    global fields
+    # print(config_values.keys())
+    try:
+        if cfg.configuration_count_required_fields:
+            fields = cfg.configuration_count_required_fields
+            check_field_length = len(fields)
+            check_list = []
+            for field in fields:
+                if field not in config_values.keys():
+                    # check_flag=0
+                    check_list.append(field)
+            length_list = len(check_list)
+            # print(check_list)
+            if length_list > 0:
+                status = False
+                validation_message += config_keys + \
+                    " : Fields '{}' is Not Present in Configuration File, ".format(
+                        ",".join(check_list))
+                return False
+            return True
 
+    except Exception as e:
+        message = e
 
 
 ######################
@@ -156,11 +168,10 @@ def from_main(con):
     for cfgkey, cfgval in con.items():
         index = 0
         collection_name = cfgval["collection_name"]
-        checked = check_fields(cfgkey,cfgval)
+        checked = check_fields(cfgkey, cfgval)
         if checked != True:
             # validation_message += validation_message
             continue
-            print(cfgkey)
         if cfgval["is_active"] == 1:
             if cfgval["interval_mode"] == "day":
                 if not cfgval["interval_date"] or not cfgval["interval_date"].strip():
@@ -169,12 +180,14 @@ def from_main(con):
                     start_date = datetime.datetime.strptime(
                         start_date_str, "%Y-%m-%dT%H:%M:%S"
                     )
-                    end_date_str = str(datetime.date.today()) + "T" + "00:00:00.000Z"
+                    end_date_str = str(datetime.date.today()
+                                       ) + "T" + "00:00:00.000Z"
                     end_date = datetime.datetime.strptime(
                         end_date_str, "%Y-%m-%dT%H:%M:%S"
                     )
                     query1 = {
-                        cfgval["field_name"]: {"$gte": start_date, "$lt": end_date}
+                        cfgval["field_name"]: {
+                            "$gte": start_date, "$lt": end_date}
                     }
                     query2 = cfgval["filter"]
                     query = query1.copy()
@@ -209,17 +222,20 @@ def from_main(con):
                     start_date_time_str = cfgval["interval_time"]
                     if not cfgval["interval_time"]:
                         start_date_time_str = "00:00:00.000Z"
-                    start_date_str = cfgval["interval_date"] + "T" + start_date_time_str
+                    start_date_str = cfgval["interval_date"] + \
+                        "T" + start_date_time_str
                     start_date = datetime.datetime.strptime(
                         start_date_str, "%Y-%m-%dT%H:%M:%S"
                     )
                     end_date_str_1 = start_date.date() + datetime.timedelta(days=1)
-                    end_date_str = str(end_date_str_1) + "T" + start_date_time_str
+                    end_date_str = str(end_date_str_1) + \
+                        "T" + start_date_time_str
                     end_date = datetime.datetime.strptime(
                         end_date_str, "%Y-%m-%dT%H:%M:%S"
                     )
                     query1 = {
-                        cfgval["field_name"]: {"$gte": start_date, "$lt": end_date}
+                        cfgval["field_name"]: {
+                            "$gte": start_date, "$lt": end_date}
                     }
                     query2 = cfgval["filter"]
                     query = query1.copy()
@@ -253,15 +269,18 @@ def from_main(con):
         message = validation_message
 
 ######################
-##Creating and Spliting Excel
+# Creating and Spliting Excel
 ######################
+
+
 def generate_data_to_excel():
     global status
     global message
     global aggregate_report_row
     try:
         if file.endswith(".xlsx"):
-            df = pd.DataFrame(reports_array, columns=aggregate_report_row.keys())
+            df = pd.DataFrame(
+                reports_array, columns=aggregate_report_row.keys())
             df.to_excel(
                 file, sheet_name=cfg.new_sheet_name, index=False, engine="openpyxl"
             )
@@ -277,7 +296,7 @@ def generate_data_to_excel():
 
 
 ######################
-##Spliting Sheet
+# Spliting Sheet
 ######################
 def split_sheet(df):
     global status
@@ -302,7 +321,7 @@ def split_sheet(df):
 
 
 ######################
-##Sending Mail
+# Sending Mail
 ######################
 def mail_sender(final_file, flag):
     global status
@@ -326,14 +345,14 @@ def mail_sender(final_file, flag):
 
 
 ######################
-##api function
+# api function
 ######################
 def run_main(con, flag):
     global status
     global message
     global reports_array
-    try: 
-        path.exists(file)    
+    try:
+        path.exists(file)
         from_main(con)
         df = generate_data_to_excel()
         final_file = split_sheet(df)
@@ -344,4 +363,3 @@ def run_main(con, flag):
         return {"status": status, "message": message, "records": output}
     except Exception as e:
         return {"status": status, "message": e}
-
